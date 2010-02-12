@@ -1,0 +1,42 @@
+name "dynamixel"
+
+using_library "dynamixel"
+
+task_context "Task" do
+    needs_configuration
+
+    property("device", "/std/string").
+        doc "the device file used to connect to the RS485 bus"
+
+    property("scanner_tilt_id", "int").
+        doc "the dynamixel id off the tilt angle of the scanner"
+
+    property("scanner_tilt_min", "double").
+        doc "minimum allowable angle of the tilt servo"
+
+    property("scanner_tilt_max", "double").
+        doc "maximum allowable angle of the tilt servo"
+
+    output_port('scanner_tilt_angle', 'double').
+	doc "current tilt angle of the scanner servo"
+
+    input_port('scanner_tilt_angle_set', 'double').
+	doc "wanted tilt angle of the scanner servo"
+
+    command("set_scanner_tilt_angle").
+        argument("angle", "double", "set the angle of the scanner tilt servo")
+end
+
+using_task_library "logger"
+deployment "test" do
+    do_not_install
+    t = task("dynamixel_Task", "dynamixel::Task").
+        periodic(0.01)
+
+    add_default_logger
+
+    if !corba_enabled?
+        browse t
+    end
+end
+
