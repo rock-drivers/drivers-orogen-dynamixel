@@ -18,13 +18,13 @@ Orocos::Process.spawn 'test' do |p|
 
     driver.device = ARGV[0]
     driver.scanner_tilt_id = 1
-    driver.scanner_tilt_min = 0
-    driver.scanner_tilt_max = 2*Math::PI
+    driver.scanner_tilt_factor = 211.59 
+    driver.scanner_tilt_zero = 898.29 
 
     driver.configure
     driver.start
 
-    angle = 180.0
+    angle = 0.0
     #reader = driver.scanner_tilt_angle.reader(:type => :buffer, :size => 10)
     reader = driver.scanner_tilt_angle.reader
 
@@ -37,10 +37,10 @@ Orocos::Process.spawn 'test' do |p|
 	sleep 0.1
 
 	cmd = $stdin.readline.chomp
-	if cmd.to_i > 0
-	    angle = cmd.to_i
-	elsif cmd == "q"
+	if cmd == "q"
 	    exit
+	else
+	    angle = cmd.to_i
 	end
     end
 end

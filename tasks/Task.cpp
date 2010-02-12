@@ -36,9 +36,9 @@ bool Task::isset_scanner_tilt_angleCompleted(double angle)
 
 bool Task::configureHook()
 {
-    if( _scanner_tilt_max.value() <= _scanner_tilt_min.value() )
+    if( _scanner_tilt_factor.value() == 0.0 )
     {
-	std::cerr << "allowable servo range is not valid." << std::endl;
+	std::cerr << "factor can not be 0.0" << std::endl;
 	return false;
     }
 
@@ -82,19 +82,13 @@ void Task::updateHook()
 	_scanner_tilt_angle_set.read( wanted_scanner_tilt_angle );
     }
 
-    if( _scanner_tilt_min > wanted_scanner_tilt_angle 
-	    || _scanner_tilt_max.value() < wanted_scanner_tilt_angle )
-    {
-	std::cerr << "wanted servo pos " << wanted_scanner_tilt_angle << " is out of allowed range." << std::endl;
-	error();
-    }
-
     uint16_t pos_ = angleToDynamixel( wanted_scanner_tilt_angle );
     if(!dynamixel_.setGoalPosition(pos_))
     {
 	std::cerr << "setGoalPosition" << std::endl;
 	perror("errno is");
 	error();
+	return;
     }
 
     uint16_t present_pos_ = 0;
@@ -103,8 +97,8 @@ void Task::updateHook()
 	std::cerr << "getPresentPosition failed" << std::endl;
 	perror("errno is");
 	error();
+	return;
     }
-    //std::cout << pos_ << ":" << present_pos_ << std::endl;
     _scanner_tilt_angle.write( dynamixelToAngle(present_pos_) );
 }
 
@@ -121,15 +115,13 @@ void Task::updateHook()
 
 uint16_t Task::angleToDynamixel( double angle ) 
 {
-    //uint16_t pos_ = (uint16_t) (angle-30*M_PI/180) / (2.0*M_PI) * (0x3ff*360/300);
-    int pos_ = 0x3ff * ( 6.0*angle / (10.0*M_PI) - 1.0/10.0 );
+    int pos_ = angle * _scanner_tilt_factor.value() + _scanner_tilt_zero.value();
     return std::min( 0x3ff, std::max( 0, pos_ ) );
 }
 
 double Task::dynamixelToAngle( uint16_t pos )
 {
-    //double angle = pos * (2.0*M_PI) / (0x3ff*360/300) + 30*M_PI/180;
-    double angle = (static_cast<double>(pos) / static_cast<double>(0x3ff) + 1.0/10.0) * (10.0*M_PI/6.0);
+    double angle = (static_cast<double>(pos) - _scanner_tilt_zero.value() ) / _scanner_tilt_factor.value();
     return angle;
 }
 
