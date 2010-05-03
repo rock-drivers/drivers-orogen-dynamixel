@@ -1,12 +1,16 @@
+<?xml version="1.0"?>
 <package>
-    <description brief="Module for Dynamixel driver">
+  <description brief="Module for Dynamixel driver">
 	This module capsules access to the dynamixel driver and can be 
 	configured for application specific use of the servos.
     </description>
-    <author>Jakob Schwendner/jakob.schwendner@dfki.de</author>
-    <copyright>
+  <author>Jakob Schwendner/jakob.schwendner@dfki.de</author>
+  <copyright>
         DFKI/robotik@dfki.de
     </copyright>
-    <license>GPL v2 or later</license>
+  <license>GPL v2 or later</license>
+  <depend package="drivers/dynamixel"/>
+  <depend package="orocos/logger"/>
+  <depend package="orocos/orogen"/>
+  <depend package="orocos/rtt"/>
 </package>
-
