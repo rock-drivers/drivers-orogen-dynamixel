@@ -87,7 +87,7 @@ void Task::updateHook()
     {
 	std::cerr << "setGoalPosition" << std::endl;
 	perror("errno is");
-	error();
+	fatal();
 	return;
     }
 
@@ -96,7 +96,7 @@ void Task::updateHook()
     {
 	std::cerr << "getPresentPosition failed" << std::endl;
 	perror("errno is");
-	error();
+	fatal();
 	return;
     }
     _scanner_tilt_angle.write( dynamixelToAngle(present_pos_) );
