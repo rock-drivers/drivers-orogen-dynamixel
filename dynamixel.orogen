@@ -8,23 +8,27 @@ task_context "Task" do
     property("device", "/std/string").
         doc "the device file used to connect to the RS485 bus"
 
-    property("scanner_tilt_id", "int").
-        doc "the dynamixel id off the tilt angle of the scanner"
+    property("servo_id", "int").
+        doc "the dynamixel id off the tilt angle"
 
-    property("scanner_tilt_zero", "double", 0.0).
-        doc "zero offset for angle to position relationship"
+    property("angle_to_servo_offset", "double", 0.0).
+        doc "zero offset for angle (in radians) to servo position relationship"
 
-    property("scanner_tilt_factor", "double", 195.0).
-        doc "slope for angle to position relationship"
+    property("angle_to_servo_factor", "double", 195.0).
+        doc "slope for angle (in radians) to servo position relationship"
 
-    output_port('scanner_tilt_angle', 'double').
-	doc "current tilt angle of the scanner servo"
+    output_port('angle', 'double').
+	doc "current tilt angle of the servo, in radians"
 
-    input_port('scanner_tilt_angle_set', 'double').
-	doc "wanted tilt angle of the scanner servo"
+    input_port('cmd_angle', 'double').
+	doc "wanted tilt angle of the servo, in radians"
 
-    command("set_scanner_tilt_angle").
-        argument("angle", "double", "set the angle of the scanner tilt servo")
+    command("set_angle").
+        argument("angle", "double", "set the angle of the scanner tilt servo, in radians")
+
+    default_activity :periodic, 0.01
+
+    fatal_states :IO_ERROR
 end
 
 using_task_library "logger"
