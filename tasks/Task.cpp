@@ -50,7 +50,7 @@ bool Task::configureHook()
 
     dynamixel_config.mFilename= ( _device.value() );
     dynamixel_config.mBaudrate = 57600;
-    dynamixel_.setTimeout(1000);
+    dynamixel_.setTimeout(10000);
 
     if(!dynamixel_.init(&dynamixel_config))
     {
