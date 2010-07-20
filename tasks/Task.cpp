@@ -18,13 +18,13 @@ Task::Task(std::string const& name)
 
 
 
-bool Task::set_scanner_tilt_angle(double angle)
+bool Task::set_angle(double angle)
 {
     wanted_scanner_tilt_angle = angle;
     return true;
 }
 
-bool Task::isset_scanner_tilt_angleCompleted(double angle)
+bool Task::isset_angleCompleted(double angle)
 {
     return true;
 }
@@ -36,51 +36,51 @@ bool Task::isset_scanner_tilt_angleCompleted(double angle)
 
 bool Task::configureHook()
 {
-    if( _scanner_tilt_factor.value() == 0.0 )
+    if( _angle_to_servo_factor.value() == 0.0 )
     {
 	std::cerr << "factor can not be 0.0" << std::endl;
 	return false;
     }
 
-    if( _scanner_tilt_cw_slope.value() < 0 ||  _scanner_tilt_cw_slope.value() > 254)
+    if( _cw_slope.value() < 0 ||  _cw_slope.value() > 254)
     {
 	std::cerr << "cw_slope range is 0-254" << std::endl;
 	return false;
     }
 
-    if( _scanner_tilt_cw_margin.value() < 0 ||  _scanner_tilt_cw_margin.value() > 254 )
+    if( _cw_margin.value() < 0 ||  _cw_margin.value() > 254 )
     {
 	std::cerr << "cw_margin range is 0-254" << std::endl;
 	return false;
     }
 
-    if( _scanner_tilt_ccw_margin.value() < 0 ||  _scanner_tilt_ccw_margin.value() > 254)
+    if( _ccw_margin.value() < 0 ||  _ccw_margin.value() > 254)
     {
 	std::cerr << "ccw_margin range is 0-254" << std::endl;
 	return false;
     }
 
-    if( _scanner_tilt_ccw_slope.value() < 0 ||  _scanner_tilt_ccw_slope.value() > 254)
+    if( _ccw_slope.value() < 0 ||  _ccw_slope.value() > 254)
     {
 	std::cerr << "ccw_slope range is 0-254" << std::endl;
 	return false;
     }
 
-    if( _scanner_tilt_punch.value() < 32 ||  _scanner_tilt_punch.value() > 1023)
+    if( _punch.value() < 32 ||  _punch.value() > 1023)
     {
 	std::cerr << "punch range is 32-1023" << std::endl;
 	return false;
     }
 
     // get the id of the tilt servo
-    int id = _scanner_tilt_id.value(); 
+    int id = _servo_id.value(); 
 
     dynamixel_.addServo(id);
     dynamixel_.setServoActive(id);
 
     dynamixel_config.mFilename= ( _device.value() );
     dynamixel_config.mBaudrate = 57600;
-    dynamixel_.setTimeout(1000);
+    dynamixel_.setTimeout(10000);
 
 
 
@@ -94,11 +94,11 @@ bool Task::configureHook()
     }
 
     // set control value A,B,C,D,E (see RX-28 manual)
-    dynamixel_.setControlTableEntry("CW Compliance Slope", _scanner_tilt_cw_slope.value());
-    dynamixel_.setControlTableEntry("CW Compliance Margin", _scanner_tilt_cw_margin.value());
-    dynamixel_.setControlTableEntry("CCW Compliance Margin", _scanner_tilt_ccw_margin.value());
-    dynamixel_.setControlTableEntry("CCW Compliance Slope", _scanner_tilt_ccw_slope.value());
-    dynamixel_.setControlTableEntry("Punch", _scanner_tilt_punch.value());
+    dynamixel_.setControlTableEntry("CW Compliance Slope", _cw_slope.value());
+    dynamixel_.setControlTableEntry("CW Compliance Margin", _cw_margin.value());
+    dynamixel_.setControlTableEntry("CCW Compliance Margin", _ccw_margin.value());
+    dynamixel_.setControlTableEntry("CCW Compliance Slope", _ccw_slope.value());
+    dynamixel_.setControlTableEntry("Punch", _punch.value());
 
 
 
@@ -119,9 +119,9 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    if( _scanner_tilt_angle_set.connected() )
+    if( _cmd_angle.connected() )
     {
-	_scanner_tilt_angle_set.read( wanted_scanner_tilt_angle );
+	_cmd_angle.read( wanted_scanner_tilt_angle );
     }
 
     uint16_t pos_ = angleToDynamixel( wanted_scanner_tilt_angle );
@@ -129,7 +129,7 @@ void Task::updateHook()
     {
 	std::cerr << "setGoalPosition" << std::endl;
 	perror("errno is");
-	error();
+	fatal(IO_ERROR);
 	return;
     }
 
@@ -138,10 +138,10 @@ void Task::updateHook()
     {
 	std::cerr << "getPresentPosition failed" << std::endl;
 	perror("errno is");
-	error();
+	fatal(IO_ERROR);
 	return;
     }
-    _scanner_tilt_angle.write( dynamixelToAngle(present_pos_) );
+    _angle.write( dynamixelToAngle(present_pos_) );
 }
 
 // void Task::errorHook()
@@ -157,13 +157,13 @@ void Task::updateHook()
 
 uint16_t Task::angleToDynamixel( double angle ) 
 {
-    int pos_ = angle * _scanner_tilt_factor.value() + _scanner_tilt_zero.value();
+    int pos_ = angle * _angle_to_servo_factor.value() + _angle_to_servo_offset.value();
     return std::min( 0x3ff, std::max( 0, pos_ ) );
 }
 
 double Task::dynamixelToAngle( uint16_t pos )
 {
-    double angle = (static_cast<double>(pos) - _scanner_tilt_zero.value() ) / _scanner_tilt_factor.value();
+    double angle = (static_cast<double>(pos) - _angle_to_servo_offset.value() ) / _angle_to_servo_factor.value();
     return angle;
 }
 

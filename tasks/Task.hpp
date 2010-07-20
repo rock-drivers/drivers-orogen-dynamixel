@@ -21,8 +21,8 @@ namespace dynamixel {
 	struct Dynamixel::Configuration dynamixel_config;
 	Dynamixel dynamixel_;
     
-	bool set_scanner_tilt_angle(double angle);
-	bool isset_scanner_tilt_angleCompleted(double angle);
+	bool set_angle(double angle);
+	bool isset_angleCompleted(double angle);
 
 	double wanted_scanner_tilt_angle;
 
