@@ -11,6 +11,21 @@ task_context "Task" do
     property("scanner_tilt_id", "int").
         doc "the dynamixel id off the tilt angle of the scanner"
 
+    property("scanner_tilt_cw_slope", "int", 32).
+        doc "the dynamixel slope A (see RX-28 manual)"
+
+    property("scanner_tilt_cw_margin", "int", 1).
+        doc "the dynamixel margin B (see RX-28 manual)"
+
+    property("scanner_tilt_ccw_margin", "int",1).
+        doc "the dynamixel margin C (see RX-28 manual)"
+
+    property("scanner_tilt_ccw_slope", "int",32).
+        doc "the dynamixel slope D (see RX-28 manual)"
+
+    property("scanner_tilt_punch", "int",32).
+        doc "the dynamixel punch E (see RX-28 manual)"
+
     property("scanner_tilt_zero", "double", 0.0).
         doc "zero offset for angle to position relationship"
 

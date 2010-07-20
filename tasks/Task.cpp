@@ -42,6 +42,36 @@ bool Task::configureHook()
 	return false;
     }
 
+    if( _scanner_tilt_cw_slope.value() < 0 ||  _scanner_tilt_cw_slope.value() > 254)
+    {
+	std::cerr << "cw_slope range is 0-254" << std::endl;
+	return false;
+    }
+
+    if( _scanner_tilt_cw_margin.value() < 0 ||  _scanner_tilt_cw_margin.value() > 254 )
+    {
+	std::cerr << "cw_margin range is 0-254" << std::endl;
+	return false;
+    }
+
+    if( _scanner_tilt_ccw_margin.value() < 0 ||  _scanner_tilt_ccw_margin.value() > 254)
+    {
+	std::cerr << "ccw_margin range is 0-254" << std::endl;
+	return false;
+    }
+
+    if( _scanner_tilt_ccw_slope.value() < 0 ||  _scanner_tilt_ccw_slope.value() > 254)
+    {
+	std::cerr << "ccw_slope range is 0-254" << std::endl;
+	return false;
+    }
+
+    if( _scanner_tilt_punch.value() < 32 ||  _scanner_tilt_punch.value() > 1023)
+    {
+	std::cerr << "punch range is 32-1023" << std::endl;
+	return false;
+    }
+
     // get the id of the tilt servo
     int id = _scanner_tilt_id.value(); 
 
@@ -52,6 +82,9 @@ bool Task::configureHook()
     dynamixel_config.mBaudrate = 57600;
     dynamixel_.setTimeout(1000);
 
+
+
+
     if(!dynamixel_.init(&dynamixel_config))
     {
         std::cerr << "cannot open device '" << _device.value() << "'." << std::endl;
@@ -59,6 +92,15 @@ bool Task::configureHook()
 	
         return false;
     }
+
+    // set control value A,B,C,D,E (see RX-28 manual)
+    dynamixel_.setControlTableEntry("CW Compliance Slope", _scanner_tilt_cw_slope.value());
+    dynamixel_.setControlTableEntry("CW Compliance Margin", _scanner_tilt_cw_margin.value());
+    dynamixel_.setControlTableEntry("CCW Compliance Margin", _scanner_tilt_ccw_margin.value());
+    dynamixel_.setControlTableEntry("CCW Compliance Slope", _scanner_tilt_ccw_slope.value());
+    dynamixel_.setControlTableEntry("Punch", _scanner_tilt_punch.value());
+
+
 
     if(!dynamixel_.readControlTable())
     {
