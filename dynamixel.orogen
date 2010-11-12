@@ -44,7 +44,7 @@ task_context "Task" do
 
     default_activity :periodic, 0.01
 
-    fatal_states :IO_ERROR
+    exception_states :IO_ERROR
 end
 
 using_task_library "logger"

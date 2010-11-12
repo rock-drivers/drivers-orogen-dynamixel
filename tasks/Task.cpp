@@ -14,7 +14,7 @@ bool Task::setAngle(double angle)
     {
 	std::cerr << "setGoalPosition" << std::endl;
 	perror("errno is");
-	fatal(IO_ERROR);
+	exception(IO_ERROR);
 	return false;
     }
 
@@ -122,7 +122,7 @@ void Task::updateHook()
     {
 	std::cerr << "getPresentPosition failed" << std::endl;
 	perror("errno is");
-	fatal(IO_ERROR);
+	exception(IO_ERROR);
 	return;
     }
     _angle.write( dynamixelToAngle(present_pos_) );
