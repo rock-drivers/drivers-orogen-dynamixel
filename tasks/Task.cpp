@@ -1,34 +1,25 @@
 #include "Task.hpp"
 
-#include <rtt/NonPeriodicActivity.hpp>
-
-
 using namespace dynamixel;
-
-
-RTT::NonPeriodicActivity* Task::getNonPeriodicActivity()
-{ return dynamic_cast< RTT::NonPeriodicActivity* >(getActivity().get()); }
-
 
 Task::Task(std::string const& name)
     : TaskBase(name)
 {
 }
 
-
-
-
-bool Task::set_angle(double angle)
+bool Task::setAngle(double angle)
 {
-    wanted_scanner_tilt_angle = angle;
+    uint16_t pos_= angleToDynamixel( angle );
+    if(!dynamixel_.setGoalPosition(pos_))
+    {
+	std::cerr << "setGoalPosition" << std::endl;
+	perror("errno is");
+	fatal(IO_ERROR);
+	return false;
+    }
+
     return true;
 }
-
-bool Task::isset_angleCompleted(double angle)
-{
-    return true;
-}
-
 
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Task.hpp for more detailed
@@ -121,16 +112,9 @@ void Task::updateHook()
 {
     if( _cmd_angle.connected() )
     {
-	_cmd_angle.read( wanted_scanner_tilt_angle );
-    }
-
-    uint16_t pos_ = angleToDynamixel( wanted_scanner_tilt_angle );
-    if(!dynamixel_.setGoalPosition(pos_))
-    {
-	std::cerr << "setGoalPosition" << std::endl;
-	perror("errno is");
-	fatal(IO_ERROR);
-	return;
+        double angle;
+	if (_cmd_angle.read( angle ) == RTT::NewData)
+            setAngle(angle);
     }
 
     uint16_t present_pos_ = 0;

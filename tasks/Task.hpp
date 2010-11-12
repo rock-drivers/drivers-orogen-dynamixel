@@ -5,13 +5,6 @@
 
 #include "dynamixel.h"
 
-
-namespace RTT
-{
-    class NonPeriodicActivity;
-}
-
-
 namespace dynamixel {
     class Task : public TaskBase
     {
@@ -21,18 +14,13 @@ namespace dynamixel {
 	struct Dynamixel::Configuration dynamixel_config;
 	Dynamixel dynamixel_;
     
-	bool set_angle(double angle);
-	bool isset_angleCompleted(double angle);
-
-	double wanted_scanner_tilt_angle;
+	bool setAngle(double angle);
 
 	uint16_t angleToDynamixel( double angle );
 	double dynamixelToAngle( uint16_t pos );
 
     public:
         Task(std::string const& name = "dynamixel::Task");
-
-        RTT::NonPeriodicActivity* getNonPeriodicActivity();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the

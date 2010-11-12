@@ -38,7 +38,8 @@ task_context "Task" do
     input_port('cmd_angle', 'double').
 	doc "wanted tilt angle of the servo, in radians"
 
-    command("set_angle").
+    operation("setAngle").
+        returns('bool').
         argument("angle", "double", "set the angle of the scanner tilt servo, in radians")
 
     default_activity :periodic, 0.01
