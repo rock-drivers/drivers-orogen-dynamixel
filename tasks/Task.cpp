@@ -7,6 +7,9 @@ Task::Task(std::string const& name)
 {
 }
 
+Task::~Task()
+{}
+
 bool Task::setAngle(double angle)
 {
     uint16_t pos_= angleToDynamixel( angle );
