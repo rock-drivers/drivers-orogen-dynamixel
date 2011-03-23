@@ -12,7 +12,7 @@ Task::~Task()
 
 bool Task::setAngle(double angle)
 {
-    uint16_t pos_= angleToDynamixel( angle );
+    uint16_t pos_= radToTicks( angle );
     if(!dynamixel_.setGoalPosition(pos_))
     {
 	std::cerr << "setGoalPosition" << std::endl;
@@ -30,12 +30,6 @@ bool Task::setAngle(double angle)
 
 bool Task::configureHook()
 {
-    if( _angle_to_servo_factor.value() == 0.0 )
-    {
-	std::cerr << "factor can not be 0.0" << std::endl;
-	return false;
-    }
-
     if( _cw_slope.value() < 0 ||  _cw_slope.value() > 254)
     {
 	std::cerr << "cw_slope range is 0-254" << std::endl;
@@ -76,9 +70,6 @@ bool Task::configureHook()
     dynamixel_config.mBaudrate = 57600;
     dynamixel_.setTimeout(10000);
 
-
-
-
     if(!dynamixel_.init(&dynamixel_config))
     {
         std::cerr << "cannot open device '" << _device.value() << "'." << std::endl;
@@ -94,7 +85,7 @@ bool Task::configureHook()
     dynamixel_.setControlTableEntry("CCW Compliance Slope", _ccw_slope.value());
     dynamixel_.setControlTableEntry("Punch", _punch.value());
 
-
+    zeroOffset = _zero_offset.value();
 
     if(!dynamixel_.readControlTable())
     {
@@ -113,13 +104,7 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    if( _cmd_angle.connected() )
-    {
-        double angle;
-	if (_cmd_angle.read( angle ) == RTT::NewData)
-            setAngle(angle);
-    }
-
+    //first read position and report 
     uint16_t present_pos_ = 0;
     if(!dynamixel_.getPresentPosition(&present_pos_) )
     {
@@ -128,7 +113,22 @@ void Task::updateHook()
 	exception(IO_ERROR);
 	return;
     }
-    _angle.write( dynamixelToAngle(present_pos_) );
+    
+    double present_angle = ticksToRad(present_pos_) - zeroOffset;
+    _angle.write( present_angle );
+    
+	    //return if no angle was set and in mode 0
+	    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
+		return;
+
+    uint16_t pos = radToTicks(wanted_scanner_tilt_angle + zeroOffset);
+    if(!dynamixel_.setGoalPosition(pos))
+    {
+	std::cerr << "setGoalPosition failed" << std::endl;
+	perror("errno is");
+	exception(IO_ERROR);
+	return;
+    }    
 }
 
 // void Task::errorHook()
@@ -142,15 +142,19 @@ void Task::updateHook()
 // }
 
 
-uint16_t Task::angleToDynamixel( double angle ) 
+uint16_t Task::radToTicks(double angle) const
 {
-    int pos_ = angle * _angle_to_servo_factor.value() + _angle_to_servo_offset.value();
-    return std::min( 0x3ff, std::max( 0, pos_ ) );
+    if(angle < 0.0)
+        return 0;
+
+    if(angle > (300.0/360.0*M_PI*2))
+        return 1024;
+
+    //(300.0/360.0*M_PI*2) == maximum moving area of servo (300 degees)
+    return angle * 1024.0 / (300.0/360.0*M_PI*2);  
 }
 
-double Task::dynamixelToAngle( uint16_t pos )
+double Task::ticksToRad(uint16_t ticks) const
 {
-    double angle = (static_cast<double>(pos) - _angle_to_servo_offset.value() ) / _angle_to_servo_factor.value();
-    return angle;
+    return ticks * (300.0/360.0*M_PI*2) /1024.0;
 }
-

@@ -16,9 +16,13 @@ namespace dynamixel {
     
 	bool setAngle(double angle);
 
-	uint16_t angleToDynamixel( double angle );
-	double dynamixelToAngle( uint16_t pos );
 
+	double zeroOffset;	
+	
+	uint16_t radToTicks(double angle) const;
+	double ticksToRad(uint16_t ticks) const;
+
+	double wanted_scanner_tilt_angle;
     public:
         Task(std::string const& name = "dynamixel::Task");
 	~Task();

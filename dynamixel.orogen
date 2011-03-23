@@ -26,11 +26,9 @@ task_context "Task" do
     property("punch", "int",32).
         doc "the dynamixel punch E (see RX-28 manual)"
 
-    property("angle_to_servo_offset", "double", 0.0).
-        doc "zero offset for angle (in radians) to servo position relationship"
+    property("zero_offset", "double", 0.0).
+        doc "offset between the servo zero and the mounting zero"
 
-    property("angle_to_servo_factor", "double", 195.0).
-        doc "slope for angle (in radians) to servo position relationship"
 
     output_port('angle', 'double').
 	doc "current tilt angle of the servo, in radians"
