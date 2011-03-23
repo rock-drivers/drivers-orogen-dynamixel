@@ -1,5 +1,8 @@
 #include "Task.hpp"
 
+#include <base/samples/rigid_body_state.h>
+
+
 using namespace dynamixel;
 
 Task::Task(std::string const& name)
@@ -94,6 +97,11 @@ bool Task::configureHook()
         return 2;
     } 
 
+    lowerDynamixel2UpperDynamixel.initSane();
+    lowerDynamixel2UpperDynamixel.sourceFrame = _lowerFrameName.value();
+    lowerDynamixel2UpperDynamixel.targetFrame = _upperFrameName.value();
+    lowerDynamixel2UpperDynamixel.position.setZero();
+    
     return true;
 }
 
@@ -116,6 +124,10 @@ void Task::updateHook()
     
     double present_angle = ticksToRad(present_pos_) - zeroOffset;
     _angle.write( present_angle );
+    
+    //also report as transformation
+    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(present_angle, Eigen::Vector3d::UnitX());
+    _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
     
 	    //return if no angle was set and in mode 0
 	    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)

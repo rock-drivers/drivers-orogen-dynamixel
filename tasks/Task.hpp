@@ -23,6 +23,9 @@ namespace dynamixel {
 	double ticksToRad(uint16_t ticks) const;
 
 	double wanted_scanner_tilt_angle;
+	
+	base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
+
     public:
         Task(std::string const& name = "dynamixel::Task");
 	~Task();

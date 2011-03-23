@@ -1,5 +1,6 @@
 name "dynamixel"
 
+import_types_from "base"
 using_library "dynamixel"
 
 task_context "Task" do
@@ -29,6 +30,16 @@ task_context "Task" do
     property("zero_offset", "double", 0.0).
         doc "offset between the servo zero and the mounting zero"
 
+
+
+    property("upperFrameName", "std/string", "upper_dynamixel").
+	doc "The name of the frame, where the upper part (rotating) of the servo is mounted"
+
+    property("lowerFrameName", "std/string", "lower_dynamixel").
+	doc "The name of the frame, where the lower part (fixed) of the servo is mounted"
+
+    output_port('lowerDynamixel2UpperDynamixel', '/base/samples/RigidBodyState').
+	doc "transformation between the lower and upper frame. It is allways assumed, that the axis of the servo is located on the X-Axis"
 
     output_port('angle', 'double').
 	doc "current tilt angle of the servo, in radians"
