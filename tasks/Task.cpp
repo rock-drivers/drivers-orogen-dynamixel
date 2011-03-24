@@ -15,15 +15,15 @@ Task::~Task()
 
 bool Task::setAngle(double angle)
 {
-    uint16_t pos_= radToTicks( angle );
-    if(!dynamixel_.setGoalPosition(pos_))
+    wanted_scanner_tilt_angle = angle;
+    uint16_t pos = radToTicks(wanted_scanner_tilt_angle + zeroOffset);
+    if(!dynamixel_.setGoalPosition(pos))
     {
-	std::cerr << "setGoalPosition" << std::endl;
+	std::cerr << "setGoalPosition failed" << std::endl;
 	perror("errno is");
 	exception(IO_ERROR);
 	return false;
-    }
-
+    }    
     return true;
 }
 
@@ -134,14 +134,7 @@ void Task::updateHook()
 	    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
 		return;
 
-    uint16_t pos = radToTicks(wanted_scanner_tilt_angle + zeroOffset);
-    if(!dynamixel_.setGoalPosition(pos))
-    {
-	std::cerr << "setGoalPosition failed" << std::endl;
-	perror("errno is");
-	exception(IO_ERROR);
-	return;
-    }    
+    setAngle(wanted_scanner_tilt_angle);
 }
 
 // void Task::errorHook()
