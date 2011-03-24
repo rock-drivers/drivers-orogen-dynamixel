@@ -27,10 +27,11 @@ task_context "Task" do
     property("punch", "int",32).
         doc "the dynamixel punch E (see RX-28 manual)"
 
+    property("torque_limit", "int", 512).
+        doc "the dynamixel punch E (see RX-28 manual)"
+
     property("zero_offset", "double", 0.0).
         doc "offset between the servo zero and the mounting zero"
-
-
 
     property("upperFrameName", "std/string", "upper_dynamixel").
 	doc "The name of the frame, where the upper part (rotating) of the servo is mounted"

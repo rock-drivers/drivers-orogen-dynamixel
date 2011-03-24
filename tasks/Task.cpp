@@ -82,6 +82,7 @@ bool Task::configureHook()
     }
 
     // set control value A,B,C,D,E (see RX-28 manual)
+    dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value());
     dynamixel_.setControlTableEntry("CW Compliance Slope", _cw_slope.value());
     dynamixel_.setControlTableEntry("CW Compliance Margin", _cw_margin.value());
     dynamixel_.setControlTableEntry("CCW Compliance Margin", _ccw_margin.value());
