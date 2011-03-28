@@ -127,7 +127,8 @@ void Task::updateHook()
     _angle.write( present_angle );
     
     //also report as transformation
-    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(present_angle, Eigen::Vector3d::UnitX());
+    lowerDynamixel2UpperDynamixel.time = base::Time::now();
+    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(-present_angle, Eigen::Vector3d::UnitX());
     _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
     
 	    //return if no angle was set and in mode 0
