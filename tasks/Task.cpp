@@ -138,6 +138,13 @@ void Task::updateHook()
     setAngle(wanted_scanner_tilt_angle);
 }
 
+
+void Task::stopHook()
+{
+    //turn off servo
+    dynamixel_.setControlTableEntry("Torque Limit", 0);
+}
+
 // void Task::errorHook()
 // {
 // }
