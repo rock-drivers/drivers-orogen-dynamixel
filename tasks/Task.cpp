@@ -130,10 +130,10 @@ void Task::updateHook()
     lowerDynamixel2UpperDynamixel.time = base::Time::now();
     lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(-present_angle, Eigen::Vector3d::UnitX());
     _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
-    
-	    //return if no angle was set and in mode 0
-	    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
-		return;
+
+    //return if no angle was set and in mode 0
+    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
+        return;
 
     setAngle(wanted_scanner_tilt_angle);
 }
