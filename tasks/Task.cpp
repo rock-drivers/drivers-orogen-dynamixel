@@ -77,17 +77,23 @@ bool Task::configureHook()
     {
         std::cerr << "cannot open device '" << _device.value() << "'." << std::endl;
         perror("errno is");
-	
+
         return false;
     }
 
     // set control value A,B,C,D,E (see RX-28 manual)
-    dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value());
-    dynamixel_.setControlTableEntry("CW Compliance Slope", _cw_slope.value());
-    dynamixel_.setControlTableEntry("CW Compliance Margin", _cw_margin.value());
-    dynamixel_.setControlTableEntry("CCW Compliance Margin", _ccw_margin.value());
-    dynamixel_.setControlTableEntry("CCW Compliance Slope", _ccw_slope.value());
-    dynamixel_.setControlTableEntry("Punch", _punch.value());
+    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
+	return false;
+    if (!dynamixel_.setControlTableEntry("CW Compliance Slope", _cw_slope.value()))
+	return false;
+    if (!dynamixel_.setControlTableEntry("CW Compliance Margin", _cw_margin.value()))
+	return false;
+    if (!dynamixel_.setControlTableEntry("CCW Compliance Margin", _ccw_margin.value()))
+	return false;
+    if (!dynamixel_.setControlTableEntry("CCW Compliance Slope", _ccw_slope.value()))
+	return false;
+    if (!dynamixel_.setControlTableEntry("Punch", _punch.value()))
+	return false;
 
     zeroOffset = _zero_offset.value();
 
