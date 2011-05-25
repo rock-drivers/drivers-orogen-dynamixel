@@ -23,6 +23,7 @@ namespace dynamixel {
 	double ticksToRad(uint16_t ticks) const;
 
 	double wanted_scanner_tilt_angle;
+	double lastMeasuredAngle;
 	
 	base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
 

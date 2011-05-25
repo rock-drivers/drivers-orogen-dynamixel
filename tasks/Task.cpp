@@ -19,7 +19,7 @@ bool Task::setAngle(double angle)
     uint16_t pos = radToTicks(wanted_scanner_tilt_angle + zeroOffset);
     if(!dynamixel_.setGoalPosition(pos))
     {
-	std::cerr << "setGoalPosition failed" << std::endl;
+	std::cerr << "setGoalPosition failed angle : " << angle << " offset: " << zeroOffset << " pos:" << pos << std::endl;
 	perror("errno is");
 	exception(IO_ERROR);
 	return false;
@@ -95,6 +95,28 @@ bool Task::configureHook()
     if (!dynamixel_.setControlTableEntry("Punch", _punch.value()))
 	return false;
 
+    if (!dynamixel_.setControlTableEntry("CW Angle Limit", 0))
+	return false;
+    if(!dynamixel_.setControlTableEntry("CCW Angle Limit", 1023))
+	return false;
+    if(!dynamixel_.setControlTableEntry("Torque Enable", 0))
+	return false;
+
+
+    //set speed
+    //0.111 is the factor for converting to RPM according to the manual
+    //RPM / 0.111 = dyna
+    int speed_dyna = _moving_speed.value() / M_PI  * 60  / 0.111;
+    std::cout << "Moving speed is " << _moving_speed.value() << " " << speed_dyna << std::endl;
+    if(speed_dyna <= 0)
+	speed_dyna = 1;
+
+    if(speed_dyna > (1<<23))
+	speed_dyna = (1<<23);
+
+    if(!dynamixel_.setControlTableEntry("Moving Speed", speed_dyna))
+	return false;
+
     zeroOffset = _zero_offset.value();
 
     if(!dynamixel_.readControlTable())
@@ -137,11 +159,47 @@ void Task::updateHook()
     lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(-present_angle, Eigen::Vector3d::UnitX());
     _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
 
-    //return if no angle was set and in mode 0
-    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
-        return;
+    switch(_mode.value())
+    {
+        case POSITION:
+	    //return if no angle was set and in mode 0
+	    if(_cmd_angle.readNewest( wanted_scanner_tilt_angle ) == RTT::NoData)
+	    {
+		return;
+	    }
+	    setAngle(wanted_scanner_tilt_angle);
 
-    setAngle(wanted_scanner_tilt_angle);
+	    break;
+        case SWEEP:
+	    if(fabs(lastMeasuredAngle - present_angle) < .2/180*M_PI)
+	    {
+		if(fabs(present_angle - _upper_sweep_angle.value()) < 4.0/180*M_PI 
+		   && wanted_scanner_tilt_angle == _upper_sweep_angle.value())
+		{
+		    wanted_scanner_tilt_angle = _lower_sweep_angle.value();
+		    setAngle(wanted_scanner_tilt_angle);
+		}
+   
+		if(fabs(present_angle - _lower_sweep_angle.value()) < 4.0/180*M_PI 
+		   && wanted_scanner_tilt_angle == _lower_sweep_angle.value())
+		{
+		    wanted_scanner_tilt_angle = _upper_sweep_angle.value();
+		    setAngle(wanted_scanner_tilt_angle);
+		}
+	    }
+	    
+	    if(wanted_scanner_tilt_angle != _lower_sweep_angle.value() &&
+	       wanted_scanner_tilt_angle != _upper_sweep_angle.value())
+	    {
+		wanted_scanner_tilt_angle = _upper_sweep_angle.value();
+		setAngle(wanted_scanner_tilt_angle);
+	    }
+	    //note sending target angle over and over results in 
+	    //non fluent movement of the servo in speed mode
+	    break;
+    }
+
+    lastMeasuredAngle = present_angle;
 }
 
 
