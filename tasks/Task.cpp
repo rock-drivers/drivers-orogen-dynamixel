@@ -17,6 +17,9 @@ bool Task::setAngle(double angle)
 {
     wanted_scanner_tilt_angle = angle;
     uint16_t pos = radToTicks(wanted_scanner_tilt_angle + zeroOffset);
+    
+    std::cout << "Setting Angel: " << angle/M_PI*180 << " in PositionMode " << (_mode.value() == POSITION) << std::endl;
+
     if(!dynamixel_.setGoalPosition(pos))
     {
 	std::cerr << "setGoalPosition failed angle : " << angle << " offset: " << zeroOffset << " pos:" << pos << std::endl;
@@ -82,8 +85,6 @@ bool Task::configureHook()
     }
 
     // set control value A,B,C,D,E (see RX-28 manual)
-    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
-	return false;
     if (!dynamixel_.setControlTableEntry("CW Compliance Slope", _cw_slope.value()))
 	return false;
     if (!dynamixel_.setControlTableEntry("CW Compliance Margin", _cw_margin.value()))
@@ -102,6 +103,20 @@ bool Task::configureHook()
     if(!dynamixel_.setControlTableEntry("Torque Enable", 0))
 	return false;
 
+    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
+	return false;
+
+    uint16_t present_pos_ = 0;
+    //set current position, so the servo won't move to old values from previous runs
+    if(!dynamixel_.getPresentPosition(&present_pos_) )
+    {
+	return false;
+    }
+
+    if(!dynamixel_.setGoalPosition(present_pos_))
+    {
+	return false;
+    }
 
     //set speed
     //0.111 is the factor for converting to RPM according to the manual
