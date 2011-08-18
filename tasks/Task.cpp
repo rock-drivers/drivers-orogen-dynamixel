@@ -103,7 +103,6 @@ bool Task::configureHook()
     if(!dynamixel_.setControlTableEntry("Torque Enable", 0))
 	return false;
 
-    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
 	return false;
 
     uint16_t present_pos_ = 0;
@@ -151,6 +150,9 @@ bool Task::configureHook()
 
 bool Task::startHook()
 {
+    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
+	return false;
+
     return true;
 }
 
