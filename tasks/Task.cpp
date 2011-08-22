@@ -103,8 +103,6 @@ bool Task::configureHook()
     if(!dynamixel_.setControlTableEntry("Torque Enable", 0))
 	return false;
 
-	return false;
-
     uint16_t present_pos_ = 0;
     //set current position, so the servo won't move to old values from previous runs
     if(!dynamixel_.getPresentPosition(&present_pos_) )
@@ -137,7 +135,7 @@ bool Task::configureHook()
     {
         std::cerr << "readControlTable" << std::endl;
         perror("errno is");
-        return 2;
+        return false;
     } 
 
     lowerDynamixel2UpperDynamixel.initSane();
