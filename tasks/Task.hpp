@@ -2,8 +2,7 @@
 #define DYNAMIXEL_TASK_TASK_HPP
 
 #include "dynamixel/TaskBase.hpp"
-
-#include "dynamixel.h"
+#include <dynamixel/dynamixel.h>
 
 namespace dynamixel {
     class Task : public TaskBase
