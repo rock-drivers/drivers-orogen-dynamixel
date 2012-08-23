@@ -1,10 +1,10 @@
 name "dynamixel"
 
-import_types_from "base"
+using_task_library "interfaces"
 using_library "dynamixel"
-import_types_from "dynamixelTypes.hh"
 
 task_context "Task" do
+    subclasses "interfaces::Servo"
     needs_configuration
 
     property("device", "/std/string").
@@ -31,21 +31,6 @@ task_context "Task" do
     property("torque_limit", "int", 512).
         doc "the dynamixel punch E (see RX-28 manual)"
 
-    property("zero_offset", "double", 0.0).
-        doc "offset between the servo zero and the mounting zero"
-
-    property("mode", "/dynamixel/MODE", :POSITION).
-       doc("mode of the module, 0 is hold position, 1 is contious sweep")
- 
-    property("lower_sweep_angle", "double", 0).
-        doc("lower bound of the sweep")
- 
-    property("upper_sweep_angle", "double", 0).
-        doc("upper bound of the sweep")
- 
-    property("moving_speed", "double", 0).
-        doc("turning speed in rad/sec")
- 
     property("upperFrameName", "std/string", "upper_dynamixel").
 	doc "The name of the frame, where the upper part (rotating) of the servo is mounted"
 
@@ -54,16 +39,6 @@ task_context "Task" do
 
     output_port('lowerDynamixel2UpperDynamixel', '/base/samples/RigidBodyState').
 	doc "transformation between the lower and upper frame. It is allways assumed, that the axis of the servo is located on the X-Axis"
-
-    output_port('angle', 'double').
-	doc "current tilt angle of the servo, in radians"
-
-    input_port('cmd_angle', 'double').
-	doc "wanted tilt angle of the servo, in radians"
-
-    operation("setAngle").
-        returns('bool').
-        argument("angle", "double", "set the angle of the scanner tilt servo, in radians")
 
     default_activity :periodic, 0.01
 

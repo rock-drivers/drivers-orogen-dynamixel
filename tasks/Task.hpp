@@ -13,17 +13,12 @@ namespace dynamixel {
 	struct Dynamixel::Configuration dynamixel_config;
 	Dynamixel dynamixel_;
     
-	bool setAngle(double angle);
+	bool set_angle(double angle);
+	double get_angle();
 
-
-	double zeroOffset;	
-	
 	uint16_t radToTicks(double angle) const;
 	double ticksToRad(uint16_t ticks) const;
 
-	double wanted_scanner_tilt_angle;
-	double lastMeasuredAngle;
-	
 	base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
 
     public:
