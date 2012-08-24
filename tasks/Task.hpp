@@ -15,6 +15,7 @@ namespace dynamixel {
     
 	bool set_angle(double angle);
 	double get_angle();
+	base::Time getTime();
 
 	uint16_t radToTicks(double angle) const;
 	double ticksToRad(uint16_t ticks) const;

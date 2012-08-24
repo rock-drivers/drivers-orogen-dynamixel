@@ -13,6 +13,11 @@ Task::Task(std::string const& name)
 Task::~Task()
 {}
 
+base::Time Task::getTime()
+{
+    return base::Time::now();
+}
+
 bool Task::set_angle(double angle)
 {
     target_angle = angle;
