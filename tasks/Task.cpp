@@ -22,7 +22,7 @@ base::Time Task::getTime()
 
 bool Task::set_angle(double angle)
 {
-    std::map<int, struct DynamixelDaisyChain>::iterator it = mDynamixels.find((int)dynamixel_.getActiveServo());
+    std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.find((int)dynamixel_.getActiveServo());
     if(it == mDynamixels.end()) {
         RTT::log(RTT::Warning) << "Servo with ID " << (int)dynamixel_.getActiveServo() 
                 << "not available" << RTT::endlog();
@@ -109,33 +109,22 @@ bool Task::configureHook()
         return false;
     }
 
-    // The single ID OR the list of IDs will be used. 
+    // Fills the dynamixel-map according to the properties servo_id, mode and dynamixels.
     std::vector<struct DynamixelDaisyChain> dynamixels_tmp = _dynamixels.get();
-    if(dynamixels_tmp.empty()) {
-        struct DynamixelDaisyChain dyn_tmp(_servo_id.get(), _mode.get());
-        mDynamixels.insert( std::pair<int, struct DynamixelDaisyChain>(_servo_id.get(), dyn_tmp) );
-        RTT::log(RTT::Info) << "Single dynamixel " << _servo_id.get() << " in mode " 
-                << ((int)_mode.get() ? "SWEEP" : "POSITION") << " will be used" << RTT::endlog();
-    } else { 
-        // Fills the internal 'mDynamixels' map using the property 'dynamixels'.
+    
+    if(dynamixels_tmp.empty()) { // Just a single servo is used, the default behaviour if the servo interface will be used.
+        struct DynamixelDaisyChainInternal dyn_tmp(_servo_id.get(), _mode.get());
+        mDynamixels.insert( std::pair<int, struct DynamixelDaisyChainInternal>(_servo_id.get(), dyn_tmp) ); 
+    } else { // Several chained up dynamixels will be used, additional ports for the current angle and transformation will be created.
         std::stringstream oss;
-        oss << "Following daisy-chained dynamixels will be used:" << std::endl;
         for(unsigned int i=0; i < dynamixels_tmp.size(); ++i) {
-            mDynamixels.insert( std::pair<int, struct DynamixelDaisyChain>(dynamixels_tmp[i].mId, dynamixels_tmp[i]) );
-            oss << i << ": ID " << dynamixels_tmp[i].mId << ", Mode " << (dynamixels_tmp[i].mMode ? "SWEEP" : "POSITION") << std::endl;
-            
-            // Create ports upper2lower_dynX and angle_dynX where X is the ID of the dynamixel
-            /*
-            std::string angle_port_name = 
-            RTT::OutputPort<double>* outputPort = new RTT::OutputPort<double>();
-            taskContextSender->ports()->addPort(outputPortName, *outputPort);
-            log(RTT::Info) << "CorbaConnection: created port: " << outputPortName << RTT::endlog();
-            */
+            struct DynamixelDaisyChainInternal dyn_tmp(dynamixels_tmp[i]);
+            dyn_tmp.addOutputPorts(this); // Adds additional output ports for every dynamixel.
+            mDynamixels.insert( std::pair<int, struct DynamixelDaisyChainInternal>(dyn_tmp.mId, dyn_tmp));
         } 
-        RTT::log(RTT::Info) << oss.str() << RTT::endlog();
     }
 
-    std::map<int, struct DynamixelDaisyChain>::iterator it = mDynamixels.begin();
+    std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.begin();
     for(; it != mDynamixels.end(); ++it) {
 
     dynamixel_.addServo(it->first);
@@ -208,100 +197,62 @@ bool Task::startHook()
     if( !TaskBase::startHook() )
 	return false;
 
-    if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
-	return false;
-
+    int active_id = dynamixel_.getActiveServo();
+    std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.begin();
+    for(; it != mDynamixels.end(); ++it) {
+        dynamixel_.setServoActive(it->first);
+        if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value())) {
+    	    return false;
+        }
+    }
+    dynamixel_.setServoActive(active_id);
     return true;
 }
 
 void Task::updateHook()
 {
-    // Publish the present angle and the transformation (just) for the ACTIVE dynamixel!
-    /////////////////// Start: copied from TaskBase::updateHook(); //////////////////
-    double present_angle = get_angle();
-    _angle.write( present_angle );
-    
-    //also report as transformation
-    upper2lower.time = getTime();
-    upper2lower.orientation = Eigen::AngleAxisd( - present_angle, _rotation_axis.value() );
-    _upper2lower.write(upper2lower);
-    /////////////////// Stop: copied from TaskBase::updateHook(); //////////////////
-
-    // TODO: this is just for backward compatibility and should be removed soon
-    lowerDynamixel2UpperDynamixel.time = base::Time::now();
-    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(-last_angle, Eigen::Vector3d::UnitX());
     _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
 
     // Updates position for all dynamixels.
     int id_tmp = dynamixel_.getActiveServo();
     enum servo::MODE mode_tmp = _mode.get();
 
-    std::map<int, struct DynamixelDaisyChain>::iterator it = mDynamixels.begin();
+    std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.begin();
     // Calls the interface update hook for every sensor.
     for(; it != mDynamixels.end(); ++it) {
         target_angle = it->second.mTargetAngle;
         last_angle = it->second.mLastAngle;
         _mode.set((enum servo::MODE)it->second.mMode);
         dynamixel_.setServoActive(it->first);
-        /////////////////// Start: copied from TaskBase::updateHook(); //////////////////
-        switch(_mode.value())
-        {
-	    case servo::POSITION:
-	        //return if no angle was set and in mode 0
-	        if(_cmd_angle.readNewest( target_angle ) == RTT::NoData)
-	        {
-		    return;
-	        }
-	        set_angle(target_angle);
+   
+        TaskBase::updateHook(); // Sets last_angle to present_angle.
 
-	        break;
-	    case servo::SWEEP:
-	        if(fabs(last_angle - present_angle) < .2/180*M_PI)
-	        {
-		    if(fabs(present_angle - _upper_sweep_angle.value()) < 4.0/180*M_PI 
-		       && target_angle == _upper_sweep_angle.value())
-		    {
-		        target_angle = _lower_sweep_angle.value();
-		        set_angle(target_angle);
-		    }
-       
-		    if(fabs(present_angle - _lower_sweep_angle.value()) < 4.0/180*M_PI 
-		       && target_angle == _lower_sweep_angle.value())
-		    {
-		        target_angle = _upper_sweep_angle.value();
-		        set_angle(target_angle);
-		    }
-	        }
-	        
-	        if(target_angle != _lower_sweep_angle.value() &&
-	           target_angle != _upper_sweep_angle.value())
-	        {
-		    target_angle = _upper_sweep_angle.value();
-		    set_angle(target_angle);
-	        }
-	        //note sending target angle over and over results in 
-	        //non fluent movement of the servo in speed mode
-	        break;
-        }
-        last_angle = present_angle;
-        /////////////////// Stop: copied from TaskBase::updateHook(); //////////////////
-
+        // Updates the dynamixel ports.
+        lowerDynamixel2UpperDynamixel.time = base::Time::now();
+        lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(-last_angle, _rotation_axis.value());
+        it->second.writeRigidBodyState(lowerDynamixel2UpperDynamixel);
+        it->second.writeAngle(last_angle);
+        
         it->second.mTargetAngle = target_angle;
         it->second.mLastAngle = last_angle;
     }
     // Restores the id which have been set while entering the update-hook.
     dynamixel_.setServoActive(id_tmp);
     _mode.set(mode_tmp);
-
-    ServoBase::updateHook();
 }
 
 void Task::stopHook()
 {
     TaskBase::stopHook();
 
-    //turn off servo
-    dynamixel_.setControlTableEntry("Torque Limit", 0);
+    // Turn off servos.
+    int active_id = dynamixel_.getActiveServo();
+    std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.begin();
+    for(; it != mDynamixels.end(); ++it) {
+        dynamixel_.setServoActive(it->first);
+        dynamixel_.setControlTableEntry("Torque Limit", 0);
+    }
+    dynamixel_.setServoActive(active_id);
 }
 
 // void Task::errorHook()

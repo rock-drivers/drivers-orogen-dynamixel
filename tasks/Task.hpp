@@ -9,49 +9,106 @@
 namespace dynamixel {
 
     /**
-     * Required for the workaround to use several chained up servos together with the
-     * servo interface.
+     * Required for the workaround to use several chained-up servos together with the
+     * servo interface. The DynamixelDaisyChain structure contains all the informations
+     * which should differ between the dynamixels.
      */
-    struct ServoInformations {
+    struct DynamixelDaisyChainInternal : public DynamixelDaisyChain {
      public:
-        ServoInformations() :
-            mTargetAngle(0.0),
-            mLastAngle(0.0) 
-        {
-        }
-
-        ServoInformations(double target_angle, double last_angle) : 
-                mTargetAngle(target_angle),
-                mLastAngle(last_angle) 
-        {
-        }
-
         double mTargetAngle;
-    	double mLastAngle;
+    	double mLastAngle; 
+        RTT::OutputPort<double>* mAngleOutputPort; 
+        RTT::OutputPort<base::samples::RigidBodyState>* mUpper2LowerOutputPort;
+
+        DynamixelDaisyChainInternal() : DynamixelDaisyChain(),
+            mTargetAngle(0.0),
+            mLastAngle(0.0),
+            mAngleOutputPort(NULL),
+            mUpper2LowerOutputPort(NULL)
+        {
+        }
+
+        DynamixelDaisyChainInternal(int id, int mode) : DynamixelDaisyChain(id, mode),
+            mTargetAngle(0.0),
+            mLastAngle(0.0),
+            mAngleOutputPort(NULL),
+            mUpper2LowerOutputPort(NULL)
+        {
+        }
+
+        DynamixelDaisyChainInternal(DynamixelDaisyChain& dyn) : DynamixelDaisyChain(dyn.mId, dyn.mMode),
+            mTargetAngle(0.0),
+            mLastAngle(0.0),
+            mAngleOutputPort(NULL),
+            mUpper2LowerOutputPort(NULL)
+        {
+        }
+
+        void addOutputPorts(RTT::TaskContext* task_context) {
+            std::stringstream port_name;
+            if(mAngleOutputPort == NULL) {
+                port_name << "angle_dyn" << mId;
+                mAngleOutputPort = new RTT::OutputPort<double>(port_name.str());
+                task_context->ports()->addPort(port_name.str(), *mAngleOutputPort);
+                log(RTT::Info) << "Created output port: " << port_name.str() << RTT::endlog();
+            }
+
+            if(mUpper2LowerOutputPort == NULL) {
+                port_name.clear();
+                port_name << "upper2lower_dyn" << mId;
+                mUpper2LowerOutputPort = new RTT::OutputPort<base::samples::RigidBodyState>(port_name.str());
+                task_context->ports()->addPort(port_name.str(), *mUpper2LowerOutputPort);
+                log(RTT::Info) << "Created output port: " << port_name.str() << RTT::endlog();
+            }
+        }
+
+        bool writeAngle(double angle) {
+            if(mAngleOutputPort != NULL) {
+                mAngleOutputPort->write(angle); 
+            } else {
+                log(RTT::Warning) << "Angle have not been written, use addPorts() first" << RTT::endlog();
+                return false;
+            }   
+            return true;
+        }
+
+        bool writeRigidBodyState(base::samples::RigidBodyState& rigid_body_state) {
+            if(mUpper2LowerOutputPort != NULL) {
+                mUpper2LowerOutputPort->write(rigid_body_state);
+            } else {
+                log(RTT::Warning) << "RigidBodyState have not been written, use addPorts() first" << RTT::endlog();
+                return false;                
+            }
+            return true;
+        }
     };
 
     class Task : public TaskBase
     {
 	friend class TaskBase;
     protected:
-    
-	struct Dynamixel::Configuration dynamixel_config;
-	Dynamixel dynamixel_;
-    
-	bool set_angle(double angle);
-	double get_angle();
-	base::Time getTime();
+	    struct Dynamixel::Configuration dynamixel_config;
+	    Dynamixel dynamixel_;
+	    base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
+        std::map<int, DynamixelDaisyChainInternal> mDynamixels; // Contains the daisy-chained dynamixel informations.
+        
+        /**
+         * Sets the passed position for the active dynamixel.
+         */
+	    bool set_angle(double angle);
 
-	uint16_t radToTicks(double angle) const;
-	double ticksToRad(uint16_t ticks) const;
+        /**
+         * Returns the position of the active dynamixel.
+         */
+	    double get_angle();
+	    base::Time getTime();
 
-	base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
-
-    std::map<int, struct DynamixelDaisyChain> mDynamixels; // Contains the daisy chained dynamixels.
+	    uint16_t radToTicks(double angle) const;
+	    double ticksToRad(uint16_t ticks) const;
 
     public:
         Task(std::string const& name = "dynamixel::Task");
-	~Task();
+	    ~Task();
 
         /** This hook is called by Orocos when the state machine transitions
          * from PreOperational to Stopped. If it returns false, then the
