@@ -2,6 +2,7 @@ name "dynamixel"
 
 using_task_library "interfaces"
 using_library "dynamixel"
+import_types_from "DynamixelDaisyChain.hpp"
 
 task_context "Task" do
     subclasses "interfaces::Servo"
@@ -12,6 +13,9 @@ task_context "Task" do
 
     property("servo_id", "int").
         doc "the dynamixel id off the tilt angle"
+
+    property("dynamixels", "/std/vector</dynamixel/DynamixelDaisyChain>").
+        doc "Use this vector if there are several dynamixels daisy chained. In this case 'servo_id' is ignored and the operation setDynamixelActive() has to be used. By default the last dynamixel is the active one."
 
     property("cw_slope", "int", 32).
         doc "the dynamixel slope A (see RX-28 manual)"
@@ -40,7 +44,12 @@ task_context "Task" do
     output_port('lowerDynamixel2UpperDynamixel', '/base/samples/RigidBodyState').
 	doc "transformation between the lower and upper frame. It is allways assumed, that the axis of the servo is located on the X-Axis"
 
+    operation("setDynamixelActive").
+        returns('bool').
+        argument("servo_id", "int", "Activates the servo which belongs to the passed servo id")
+
     default_activity :periodic, 0.01
+    default_activity 'fd_driven' 
 
     exception_states :IO_ERROR
 end

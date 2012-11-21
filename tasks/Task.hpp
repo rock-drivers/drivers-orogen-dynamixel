@@ -4,7 +4,32 @@
 #include "dynamixel/TaskBase.hpp"
 #include <dynamixel/dynamixel.h>
 
+#include <map>
+
 namespace dynamixel {
+
+    /**
+     * Required for the workaround to use several chained up servos together with the
+     * servo interface.
+     */
+    struct ServoInformations {
+     public:
+        ServoInformations() :
+            mTargetAngle(0.0),
+            mLastAngle(0.0) 
+        {
+        }
+
+        ServoInformations(double target_angle, double last_angle) : 
+                mTargetAngle(target_angle),
+                mLastAngle(last_angle) 
+        {
+        }
+
+        double mTargetAngle;
+    	double mLastAngle;
+    };
+
     class Task : public TaskBase
     {
 	friend class TaskBase;
@@ -21,6 +46,8 @@ namespace dynamixel {
 	double ticksToRad(uint16_t ticks) const;
 
 	base::samples::RigidBodyState lowerDynamixel2UpperDynamixel;
+
+    std::map<int, struct DynamixelDaisyChain> mDynamixels; // Contains the daisy chained dynamixels.
 
     public:
         Task(std::string const& name = "dynamixel::Task");
@@ -48,21 +75,11 @@ namespace dynamixel {
          */
         bool startHook();
 
-        /** This hook is called by Orocos when the component is in the Running
-         * state, at each activity step. Here, the activity gives the "ticks"
-         * when the hook should be called. See README.txt for different
-         * triggering options.
-         *
-         * The warning(), error() and fatal() calls, when called in this hook,
-         * allow to get into the associated RunTimeWarning, RunTimeError and
-         * FatalError states. 
-         *
-         * In the first case, updateHook() is still called, and recovered()
-         * allows you to go back into the Running state.  In the second case,
-         * the errorHook() will be called instead of updateHook() and in the
-         * third case the component is stopped and resetError() needs to be
-         * called before starting it again.
-         *
+        /** 
+         * Unfortunately the content of TaskBase::updateHook() had to be copied.
+         * Otherwise the daisy chained dynamixels would publish their angle and their
+         * transformation one after another on the same port.
+         * Now only the active dynamixel uses the ports.
          */
         void updateHook();
         
@@ -85,6 +102,8 @@ namespace dynamixel {
          * before calling start() again.
          */
         // void cleanupHook();
+
+        bool setDynamixelActive(boost::int32_t servo_id);
     };
 }
 
