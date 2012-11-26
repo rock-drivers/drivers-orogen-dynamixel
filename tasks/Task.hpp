@@ -51,6 +51,7 @@ namespace dynamixel {
                 mAngleOutputPort = new RTT::OutputPort<double>(port_name.str());
                 task_context->ports()->addPort(port_name.str(), *mAngleOutputPort);
                 log(RTT::Info) << "Created output port: " << port_name.str() << RTT::endlog();
+                std::cout << "CREATE PORT " << port_name.str() << std::endl;
             }
 
             if(mUpper2LowerOutputPort == NULL) {

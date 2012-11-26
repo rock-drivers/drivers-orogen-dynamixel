@@ -11,7 +11,7 @@ end
 ENV['PKG_CONFIG_PATH'] = "#{File.expand_path("..", File.dirname(__FILE__))}/build:#{ENV['PKG_CONFIG_PATH']}"
 
 Orocos.initialize
-Orocos.load_all_typekits
+Orocos.load_typekit("dynamixel")
 
 DynamixelType = Orocos.registry.get("dynamixel/DynamixelDaisyChain")
 
@@ -21,11 +21,23 @@ Orocos.run 'test' do
     driver.device = ARGV[0]
     driver.servo_id = 1
     driver.zero_offset = 4.58660255577807
+    driver.moving_speed = 0.1
     
     dyn_type_cam = DynamixelType.new(:mId => 1, :mMode => 0)
     dyn_type_head = DynamixelType.new(:mId => 2, :mMode => 1)
-    driver.dynamixels.insert(dyn_type_cam)
-    driver.dynamixels.insert(dyn_type_head)
+    array = Array.new
+    array << dyn_type_cam
+    array << dyn_type_head
+
+    driver.dynamixels = array
+
+    puts "drivers: #{driver.dynamixels.size}" 
+
+    driver.dynamixels.each do |element|
+         puts "#{element}"
+    end
+    
+    driver.num_resend = 2
 
     driver.configure
     driver.start
