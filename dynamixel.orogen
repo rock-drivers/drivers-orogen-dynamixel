@@ -44,6 +44,9 @@ task_context "Task" do
     property("lowerFrameName", "std/string", "lower_dynamixel").
 	doc "The name of the frame, where the lower part (fixed) of the servo is mounted"
 
+    property("num_resend", "int", 0).
+        doc "If > 0 each command will be resend if an error occurre. Can be used to handle communication errors which occur seldomly."
+
     output_port('lowerDynamixel2UpperDynamixel', '/base/samples/RigidBodyState').
 	doc "transformation between the lower and upper frame. It is allways assumed, that the axis of the servo is located on the X-Axis"
 
