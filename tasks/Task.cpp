@@ -108,6 +108,10 @@ bool Task::configureHook()
 
         return false;
     }
+    
+    if(_num_resend.get() > 0) {
+        dynamixel_.setNumberRetries(_num_resend.get());
+    }
 
     // Fills the dynamixel-map according to the properties servo_id, mode and dynamixels.
     std::vector<struct DynamixelDaisyChain> dynamixels_tmp = _dynamixels.get();
@@ -115,13 +119,18 @@ bool Task::configureHook()
     if(dynamixels_tmp.empty()) { // Just a single servo is used, the default behaviour if the servo interface will be used.
         struct DynamixelDaisyChainInternal dyn_tmp(_servo_id.get(), _mode.get());
         mDynamixels.insert( std::pair<int, struct DynamixelDaisyChainInternal>(_servo_id.get(), dyn_tmp) ); 
+        RTT::log(RTT::Info) << "Single dynamixel with ID " << _servo_id.get() << " will be used" << RTT::endlog();
     } else { // Several chained up dynamixels will be used, additional ports for the current angle and transformation will be created.
         std::stringstream oss;
+        oss << "The following daisy-chained dynamixels will be used:" << std::endl;
         for(unsigned int i=0; i < dynamixels_tmp.size(); ++i) {
             struct DynamixelDaisyChainInternal dyn_tmp(dynamixels_tmp[i]);
             dyn_tmp.addOutputPorts(this); // Adds additional output ports for every dynamixel.
             mDynamixels.insert( std::pair<int, struct DynamixelDaisyChainInternal>(dyn_tmp.mId, dyn_tmp));
+            oss << dyn_tmp.mId << " ";
         } 
+        oss << std::endl;
+        RTT::log(RTT::Info) << oss.str() << RTT::endlog();
     }
 
     std::map<int, struct DynamixelDaisyChainInternal>::iterator it = mDynamixels.begin();
@@ -146,7 +155,7 @@ bool Task::configureHook()
 	return false;
     if(!dynamixel_.setControlTableEntry("CCW Angle Limit", 1023))
 	return false;
-    if(!dynamixel_.setControlTableEntry("Torque Enable", 0))
+    if(!dynamixel_.setControlTableEntry("Torque Enable", _torque_enable.get() ? 1 : 0))
 	return false;
 
     uint16_t present_pos_ = 0;
@@ -165,7 +174,7 @@ bool Task::configureHook()
     //0.111 is the factor for converting to RPM according to the manual
     //RPM / 0.111 = dyna
     int speed_dyna = _moving_speed.value() / M_PI  * 60  / 0.111;
-    std::cout << "Moving speed is " << _moving_speed.value() << " " << speed_dyna << std::endl;
+    RTT::log(RTT::Info) << "Moving speed is " << _moving_speed.value() << " " << speed_dyna << RTT::endlog();
     if(speed_dyna <= 0)
 	speed_dyna = 1;
 
