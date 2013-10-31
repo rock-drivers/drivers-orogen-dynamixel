@@ -183,7 +183,7 @@ void Task::updateHook()
 
     // TODO: this is just for backward compatibility and should be removed soon
     lowerDynamixel2UpperDynamixel.time = base::Time::now();
-    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(last_angle, Eigen::Vector3d::UnitiY());
+    lowerDynamixel2UpperDynamixel.orientation = Eigen::AngleAxisd(last_angle, Eigen::Vector3d::UnitY());
     _lowerDynamixel2UpperDynamixel.write(lowerDynamixel2UpperDynamixel);
 }
 
