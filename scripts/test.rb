@@ -8,11 +8,11 @@ if !ARGV[0]
     exit 1
 end
 
-ENV['PKG_CONFIG_PATH'] = "#{File.expand_path("..", File.dirname(__FILE__))}/build:#{ENV['PKG_CONFIG_PATH']}"
+#ENV['PKG_CONFIG_PATH'] = "#{File.expand_path("..", File.dirname(__FILE__))}/build:#{ENV['PKG_CONFIG_PATH']}"
 
 Orocos.initialize
 
-Orocos::Process.spawn 'test' do |p|
+Orocos.run 'dynamixel::Task' => "dynamixel_Task" do |p|
     driver = p.task 'dynamixel_Task'
     Orocos.log_all_ports
 
