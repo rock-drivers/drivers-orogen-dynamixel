@@ -8,6 +8,7 @@ using namespace dynamixel;
 Task::Task(std::string const& name)
     : TaskBase(name)
 {
+    _rotation_axis.value() = base::Vector3d::UnitX();
 }
 
 Task::~Task()
@@ -169,6 +170,11 @@ bool Task::startHook()
 {
     if( !TaskBase::startHook() )
 	return false;
+    
+    upper2lower.initSane();
+    upper2lower.position.setZero();
+    upper2lower.sourceFrame = _upper_frame.value();
+    upper2lower.targetFrame = _lower_frame.value();
 
     if (!dynamixel_.setControlTableEntry("Torque Limit", _torque_limit.value()))
 	return false;
@@ -178,8 +184,56 @@ bool Task::startHook()
 
 void Task::updateHook()
 {
-    // most of the work is performed in the interface class
     TaskBase::updateHook();
+    
+    double present_angle = get_angle();
+    _angle.write( present_angle );
+    
+    //also report as transformation
+    upper2lower.time = getTime();
+    upper2lower.orientation = Eigen::AngleAxisd( -present_angle, _rotation_axis.value() );
+    _upper2lower.write(upper2lower);
+
+    switch(_mode.value())
+    {
+	case servo::POSITION:
+	    //return if no angle was set and in mode 0
+	    if(_cmd_angle.readNewest( target_angle ) == RTT::NoData)
+	    {
+		return;
+	    }
+	    set_angle(target_angle);
+
+	    break;
+	case servo::SWEEP:
+	    if(fabs(last_angle - present_angle) < .2/180*M_PI)
+	    {
+		if(fabs(present_angle - _upper_sweep_angle.value()) < 4.0/180*M_PI 
+		   && target_angle == _upper_sweep_angle.value())
+		{
+		    target_angle = _lower_sweep_angle.value();
+		    set_angle(target_angle);
+		}
+   
+		if(fabs(present_angle - _lower_sweep_angle.value()) < 4.0/180*M_PI 
+		   && target_angle == _lower_sweep_angle.value())
+		{
+		    target_angle = _upper_sweep_angle.value();
+		    set_angle(target_angle);
+		}
+	    }
+	    
+	    if(target_angle != _lower_sweep_angle.value() &&
+	       target_angle != _upper_sweep_angle.value())
+	    {
+		target_angle = _upper_sweep_angle.value();
+		set_angle(target_angle);
+	    }
+	    //note sending target angle over and over results in 
+	    //non fluent movement of the servo in speed mode
+	    break;
+    }
+    last_angle = present_angle;
 
     // TODO: this is just for backward compatibility and should be removed soon
     lowerDynamixel2UpperDynamixel.time = base::Time::now();
