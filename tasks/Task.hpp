@@ -9,6 +9,13 @@ namespace dynamixel {
     {
 	friend class TaskBase;
     protected:
+	/** target angle */
+	double target_angle;
+	/** last measured angle */
+	double last_angle;
+
+	/** rigid body state for the transformation */
+	base::samples::RigidBodyState upper2lower;
     
 	struct Dynamixel::Configuration dynamixel_config;
 	Dynamixel dynamixel_;

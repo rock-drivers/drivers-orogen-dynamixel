@@ -1,11 +1,40 @@
 name "dynamixel"
 
-using_task_library "interfaces"
+import_types_from "base"
 using_library "dynamixel"
+import_types_from "servoTypes.hpp"
 
 task_context "Task" do
-    subclasses "interfaces::Servo"
     needs_configuration
+    
+    property("zero_offset", "double", 0.0).
+        doc "offset between the servo zero and the mounting zero"
+    property("mode", "/servo/MODE", :POSITION).
+       doc("mode of the module, 0 is hold position, 1 is contious sweep")
+    property("lower_sweep_angle", "double", 0).
+        doc("lower bound of the sweep")
+    property("upper_sweep_angle", "double", 0).
+        doc("upper bound of the sweep")
+    property("moving_speed", "double", 0).
+        doc("turning speed in rad/sec")
+    property("upper_frame", "std/string", "upper_servo").
+	doc "The name of the frame, where the upper part (rotating) of the servo is mounted"
+    property("lower_frame", "std/string", "lower_servo").
+	doc "The name of the frame, where the lower part (fixed) of the servo is mounted"
+    property("rotation_axis", "base/Vector3d").
+	doc "rotational axis for the upper2lower transform."
+
+    output_port('upper2lower', '/base/samples/RigidBodyState').
+	doc "transformation between the lower and upper frame. The rotational axis of the servo is specified in rotation_axis."
+    output_port('angle', 'double').
+	doc "current tilt angle of the servo, in radians"
+
+    input_port('cmd_angle', 'double').
+	doc "wanted tilt angle of the servo, in radians"
+
+    operation("set_angle").
+        returns('bool').
+        argument("angle", "double", "set the angle of the servo, in radians")
 
     property("device", "/std/string").
         doc "the device file used to connect to the RS485 bus"
